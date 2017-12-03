@@ -12,21 +12,22 @@
 int main(int argc, char *argv[])
 {
 
-    struct sockaddr_in servaddr;
+    struct sockaddr_in cliaddr;
     struct ip_mreq group;
 
     int fd;
-    int buflen;
+    int clilen;
 
     char *ipaddr;
     char *ifaddr;
     char buf[80];
 
     int port;
-    int reuse = 1;
+    char *ack = "Server ACK";
+    socklen_t cliaddr_len;
 
 
-    if (argc != 3) {
+    if (argc != 3) { // Check command line args
         fprintf(stderr, "Usage: %s <ipaddr> <port> \n", argv[0]);
         exit (-1);
     }
@@ -45,28 +46,16 @@ int main(int argc, char *argv[])
 
     }
 
-    /* Enable SO_REUSEADDR to allow multiple instances of this
-       application to receive copies of the multicast datagrams. */
-    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse)) < 0)
-    {
-        fprintf(stderr, "Error setting SO_REUSEADDR %x (%s) \n",
-                errno, strerror(errno));
-        close(fd);
-
-        exit( -1);
-
-    }
-
     /* Bind to the proper port number with the IP address
        specified as INADDR_ANY. */
 
-    memset((char *) &servaddr, 0, sizeof(servaddr));
+    memset((char *) &cliaddr, 0, sizeof(cliaddr));
 
-    servaddr.sin_family = AF_INET;
-    servaddr.sin_port = htons(port);
-    servaddr.sin_addr.s_addr = INADDR_ANY;
+    cliaddr.sin_family = AF_INET;
+    cliaddr.sin_port = htons(port);
+    cliaddr.sin_addr.s_addr = INADDR_ANY;
 
-    if (bind(fd, (struct sockaddr*)&servaddr, sizeof(servaddr)))
+    if (bind(fd, (struct sockaddr*)&cliaddr, sizeof(cliaddr)))
     {
         fprintf(stderr, "Error binding datagram socket %x (%s) \n",
                 errno, strerror(errno));
@@ -92,18 +81,16 @@ int main(int argc, char *argv[])
 
     /* Read from the socket. */
     while(1) {
-      buflen = sizeof(buf);
-      if (read(fd, buf, buflen) < 0)
-      {
-          fprintf(stderr, "Error reading datagram message %x (%s) \n",
-                  errno, strerror(errno));
-          close(fd);
-          exit(1);
+          clilen = sizeof(cliaddr);
+          if (recvfrom(fd, buf, sizeof(buf), 0, (struct sockaddr *)&cliaddr, &clilen) < 0) {
+      			perror("recvfrom error");
+      			exit(-1);
+      		}
 
+            printf("The message from multicast server host client is: %s\n", buf);
+            sendto(fd, (const void*)ack, strlen(ack), 0, (struct sockaddr *)&cliaddr, sizeof(cliaddr));
       }
 
-      printf("The message from multicast server is: %s\n", buf);
-    }
 
     return 0;
 

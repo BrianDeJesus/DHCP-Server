@@ -17,12 +17,14 @@ int main (int argc, char *argv[])
     struct in_addr localInterface;
     struct sockaddr_in cliaddr;
     char   str[80];
+    char rec[60];
 
     char *ipaddr;
     char *lfaddr;
 
     int port;
-    int fd;
+    int fd, n, cli_len;
+    int reuse = 1;
 
     if (argc != 3) {
     	printf("Usage: tcpclient <address> <port> \n");
@@ -42,6 +44,7 @@ int main (int argc, char *argv[])
         exit(1);
     }
 
+
     /* Initialize the group sockaddr structure  */
     memset((char *) &cliaddr, 0, sizeof(cliaddr));
 
@@ -60,14 +63,23 @@ int main (int argc, char *argv[])
 
     }
 
-    while (fgets(str, MAXLINE, stdin) != NULL) {
+    cli_len = sizeof(cliaddr);
+    while (1) {
+        memset((char *) &str, 0, sizeof(str));
+        memset((char *) &rec, 0, sizeof(rec));
+        fgets(str, MAXLINE, stdin);
         if (sendto (fd, str, MAXLINE, 0, (struct sockaddr*)&cliaddr, sizeof(cliaddr)) < 0) {
             fprintf(stderr, "Error sending datagram message: %x (%s) \n",
                     errno, strerror(errno));
             exit( -1);
         }
-    }
+
+        n = recvfrom(fd, rec, MAXLINE, 0, (struct sockaddr *)&cliaddr, &cli_len);
+
+        printf("The message from multicast DHCP server is: %s\n", rec);
+
+  }
 
     close(fd);
-
+    return 0;
 }
