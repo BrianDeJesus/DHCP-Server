@@ -9,6 +9,14 @@
 #include <netinet/in.h>
 
 
+int client_discover(char *msg) {
+  char *key = "DHCP discover";
+  if(strncmp(key, msg, strlen(key)) == 0){
+    return 1;
+  }
+  return 0;
+}
+
 int main(int argc, char *argv[])
 {
 
@@ -24,6 +32,7 @@ int main(int argc, char *argv[])
 
     int port;
     char *ack = "Server ACK";
+    char *discover_received = "Discovery RECEIVED!";
     socklen_t cliaddr_len;
 
 
@@ -45,12 +54,9 @@ int main(int argc, char *argv[])
         exit( -1);
 
     }
-
     /* Bind to the proper port number with the IP address
        specified as INADDR_ANY. */
-
     memset((char *) &cliaddr, 0, sizeof(cliaddr));
-
     cliaddr.sin_family = AF_INET;
     cliaddr.sin_port = htons(port);
     cliaddr.sin_addr.s_addr = INADDR_ANY;
@@ -63,7 +69,6 @@ int main(int argc, char *argv[])
         exit(-1);
 
     }
-
     /* Join the multicast group  on the local host
        interface. Note that this IP_ADD_MEMBERSHIP option must be
        called for each local interface over which the multicast
@@ -88,6 +93,10 @@ int main(int argc, char *argv[])
       		}
 
             printf("The message from multicast server host client is: %s\n", buf);
+            if(client_discover(buf)) {
+              printf("Client discover request! \n");
+              sendto(fd, (const void*)discover_received, strlen(discover_received), 0, (struct sockaddr *)&cliaddr, sizeof(cliaddr));
+            }
             sendto(fd, (const void*)ack, strlen(ack), 0, (struct sockaddr *)&cliaddr, sizeof(cliaddr));
       }
 
