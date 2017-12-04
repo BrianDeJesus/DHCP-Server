@@ -9,7 +9,7 @@
 #include <netinet/in.h>
 
 
-int client_discover(char *msg) {
+int client_discover(char *msg) { //Check if client DHCP discover message
   char *key = "DHCP discover";
   if(strncmp(key, msg, strlen(key)) == 0){
     return 1;
@@ -17,8 +17,7 @@ int client_discover(char *msg) {
   return 0;
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
 
     struct sockaddr_in cliaddr;
     struct ip_mreq group;
@@ -70,7 +69,7 @@ int main(int argc, char *argv[])
 
     }
     /* Join the multicast group  on the local host
-       interface. Note that this IP_ADD_MEMBERSHIP option must be
+       interface. IP_ADD_MEMBERSHIP option must be
        called for each local interface over which the multicast
        datagrams are to be received. */
 
@@ -87,7 +86,7 @@ int main(int argc, char *argv[])
     /* Read from the socket. */
     while(1) {
           clilen = sizeof(cliaddr);
-          if (recvfrom(fd, buf, sizeof(buf), 0, (struct sockaddr *)&cliaddr, &clilen) < 0) {
+          if (recvfrom(fd, buf, sizeof(buf), 0, (struct sockaddr *)&cliaddr, &clilen) < 0) { // Receive client message
       			perror("recvfrom error");
       			exit(-1);
       		}
