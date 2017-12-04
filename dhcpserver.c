@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
 
     int port;
     char *ack = "Server ACK";
-    char *discover_received = "Discovery RECEIVED!";
+    char *dhcp_offer = "DHCP offer!";
     socklen_t cliaddr_len;
 
 
@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
             printf("The message from multicast server host client is: %s\n", buf);
             if(client_discover(buf)) {
               printf("Client discover request! \n");
-              sendto(fd, (const void*)discover_received, strlen(discover_received), 0, (struct sockaddr *)&cliaddr, sizeof(cliaddr));
+              sendto(fd, (const void*)dhcp_offer, strlen(dhcp_offer), 0, (struct sockaddr *)&cliaddr, sizeof(cliaddr));
             }
             sendto(fd, (const void*)ack, strlen(ack), 0, (struct sockaddr *)&cliaddr, sizeof(cliaddr));
       }

@@ -86,7 +86,7 @@ int main (int argc, char *argv[])
         memset((char *) &str, 0, sizeof(str)); // Clear buffers
         memset((char *) &rec, 0, sizeof(rec));
         fgets(str, MAXLINE, stdin);   // Input message
-        strcat(str, mac);         // Send mac address along with message
+        strcat(str, mac);         // Attach mac address along with message
         if (sendto (fd, str, MAXLINE, 0, (struct sockaddr*)&cliaddr, sizeof(cliaddr)) < 0) {
             fprintf(stderr, "Error sending datagram message: %x (%s) \n",
                     errno, strerror(errno));
