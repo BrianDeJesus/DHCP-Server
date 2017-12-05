@@ -1,3 +1,10 @@
+/*
+Brian DeJesus
+cs436 Networking
+DHCP Server
+tool: C
+Enter: "DHCP discover" without quotes on client side to request an ip address  
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,7 +40,7 @@ int main (int argc, char *argv[])
     struct in_addr localInterface;
     struct sockaddr_in cliaddr;
     char  str[80];
-    char rec[60];
+    char rec[80];
 
     char *ipaddr;
     char *lfaddr;
@@ -61,7 +68,6 @@ int main (int argc, char *argv[])
         perror("Opening datagram socket error");
         exit(1);
     }
-
 
     /* Initialize the group sockaddr structure  */
     memset((char *) &cliaddr, 0, sizeof(cliaddr));

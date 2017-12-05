@@ -1,3 +1,9 @@
+/*
+Brian DeJesus
+cs436 Networking
+DHCP Server
+tool: C
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,14 +15,17 @@
 #include <netinet/in.h>
 #include <pthread.h>
 
-#define MAX_THREADS 10
+#define MAXLINE 80
+#define MAX_THREADS 20
+#define MAX_OFFERS 7
 pthread_t threads[MAX_THREADS];
+static int addr_index = 0;
 
 struct thread_argos {
   int sock;
   struct sockaddr_in cli_addr;
-  char *the_buf;
   int cli_len;
+  char *the_buf;
     };
 
 void *connection_handler(void *thread_args) {  //Handle requests thread function
@@ -24,13 +33,29 @@ void *connection_handler(void *thread_args) {  //Handle requests thread function
   int fd = the_args->sock;
   struct sockaddr_in cliaddr = the_args->cli_addr;
   char *buf = the_args->the_buf;
-  char *ack = "Server ACK";
-  char *dhcp_offer = "DHCP offer!";
+  char ack[] = "Server ACK";
+  char dhcp_offer[] = "DHCP offer!";
+  char *new_ip_addr = "192.168.1.11";
+  char address_offer[MAX_OFFERS][20];
+  /*int len = strlen(new_ip_addr);
+  new_ip_addr[len + 1] = addr_index;*/
+  strcpy(address_offer[addr_index], "192.168.1.11");
 
   if(client_discover(buf)) {
     printf("Client discover request! \n");
-    sendto(fd, (const void*)dhcp_offer, strlen(dhcp_offer), 0, (struct sockaddr *)&cliaddr, sizeof(cliaddr));
+    if (sendto (fd, address_offer[addr_index], MAXLINE, 0, (struct sockaddr*)&cliaddr, sizeof(cliaddr)) < 0) {
+        fprintf(stderr, "Error sending datagram message: %x (%s) \n",
+                errno, strerror(errno));
+        exit( -1);
+    }
+    if(addr_index >= MAX_OFFERS) {
+      printf("Max offers reached. \n");
+      exit(-1);
+    }
+    printf("addr_index: %i\n", addr_index);
+    addr_index++;
   }
+
   sendto(fd, (const void*)ack, strlen(ack), 0, (struct sockaddr *)&cliaddr, sizeof(cliaddr));
 
     return NULL;
@@ -103,6 +128,7 @@ int main(int argc, char *argv[]) {
         close(fd);
         exit(1);
     }
+
     clilen = sizeof(cliaddr);
     args.cli_len = clilen;
     while(1) {
@@ -110,9 +136,10 @@ int main(int argc, char *argv[]) {
             perror("recvfrom error");
             exit(-1);
           }
+
             args.cli_addr = cliaddr;
-            args.the_buf = buf;
             args.sock = fd;
+            args.the_buf = buf;
             printf("The message from multicast server host client is: %s\n", buf);
             rc = pthread_create(&threads[thread_no], NULL, connection_handler, (void*)&args); // Create thread upon client request
         		if(rc) {
