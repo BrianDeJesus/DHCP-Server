@@ -18,9 +18,11 @@ tool: C
 #define MAXLINE 80
 #define MAX_THREADS 20
 #define MAX_OFFERS 10
+#define MAC_LEN 12
 pthread_t threads[MAX_THREADS];
 static int addr_index = 0;
 static int mac_index = 0;
+char macs[MAX_OFFERS][MAC_LEN] = { " " , " ", " ", " ", " ", " ", " ", " ", " "};
 
 struct thread_argos {
   int sock;
@@ -29,11 +31,10 @@ struct thread_argos {
   char *the_buf;
     };
 
-int check_macs(char *a_mac, char macz[][13]) {
+int check_macs(char *a_mac, char macz[][MAC_LEN]) {  //Check if host already been assigned ip address
   int i;
   int lengt = strlen(a_mac);
   for(i = 0; i < MAX_OFFERS; i++) {
-    printf("MAC ADDRESS: %s", macz[i]);
     if(strncmp(a_mac, macz[i], lengt) == 0)
       return 1;
   }
@@ -49,7 +50,6 @@ void *connection_handler(void *thread_args) {  //Handle requests thread function
   char dhcp_offer[] = "DHCP offer!";
   char new_ip_addr[] = "192.168.1.11";
   char address_offer[MAX_OFFERS][20];
-  char macs[MAX_OFFERS][13];
   int len = strlen(new_ip_addr);  //Get length of ip_addr
   char int_to_char[1];   //Char holder for new unique last num for new ip
   int buf_len = strlen(buf);
@@ -59,17 +59,17 @@ void *connection_handler(void *thread_args) {  //Handle requests thread function
   strcpy(address_offer[addr_index], new_ip_addr);  // Add to address offer array
 
   char *client_mac_addr = &buf[buf_len-12]; //Get client's mac address
-//  strcpy(macs[mac_index], client_mac_addr);
 
   if(client_discover(buf)) {  //If the client requested an ip
     printf("Client discover request! \n");
-    if(check_macs(client_mac_addr, macs)) {
+    if(check_macs(client_mac_addr, macs)) {  //If
       printf("Mac address already found. Terminating now \n");
       exit(-1);
     }
     else {
       printf("Successfully added client \n");
       strcpy(macs[mac_index], client_mac_addr);
+
       if(mac_index > MAX_OFFERS) {
         printf("Mac address limit reached. ");
         exit(-1);
