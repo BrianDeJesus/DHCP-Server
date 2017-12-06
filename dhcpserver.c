@@ -33,15 +33,19 @@ void *connection_handler(void *thread_args) {  //Handle requests thread function
   int fd = the_args->sock;
   struct sockaddr_in cliaddr = the_args->cli_addr;
   char *buf = the_args->the_buf;
-  char ack[] = "Server ACK";
+  char ack[] = "Server saw the message \n";
   char dhcp_offer[] = "DHCP offer!";
-  char *new_ip_addr = "192.168.1.11";
+  char new_ip_addr[] = "192.168.1.11";
   char address_offer[MAX_OFFERS][20];
-  /*int len = strlen(new_ip_addr);
-  new_ip_addr[len + 1] = addr_index;*/
-  strcpy(address_offer[addr_index], "192.168.1.11");
+  int len = strlen(new_ip_addr);  //Get length of ip_addr
+  char int_to_char[1];   //Char holder for new unique last num for new ip
 
-  if(client_discover(buf)) {
+  sprintf(int_to_char, "%i", addr_index); // Convert int to char
+  new_ip_addr[len - 1] = int_to_char[0];  // Construct new ip
+  printf("index: %s \n", new_ip_addr);
+  strcpy(address_offer[addr_index], new_ip_addr);  // Add to address offer array
+
+  if(client_discover(buf)) {  //If the client requested an ip
     printf("Client discover request! \n");
     if (sendto (fd, address_offer[addr_index], MAXLINE, 0, (struct sockaddr*)&cliaddr, sizeof(cliaddr)) < 0) {
         fprintf(stderr, "Error sending datagram message: %x (%s) \n",
@@ -54,6 +58,7 @@ void *connection_handler(void *thread_args) {  //Handle requests thread function
     }
     printf("addr_index: %i\n", addr_index);
     addr_index++;
+    return NULL; //End of send process (already sent a message)
   }
 
   sendto(fd, (const void*)ack, strlen(ack), 0, (struct sockaddr *)&cliaddr, sizeof(cliaddr));
