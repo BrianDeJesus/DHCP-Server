@@ -3,7 +3,7 @@ Brian DeJesus
 cs436 Networking
 DHCP Server
 tool: C
-Enter: "DHCP discover" without quotes on client side to request an ip address  
+Enter: "DHCP discover" without quotes on client side to request an ip address
 */
 #include <stdio.h>
 #include <stdlib.h>
