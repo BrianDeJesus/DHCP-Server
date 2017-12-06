@@ -22,7 +22,7 @@ tool: C
 pthread_t threads[MAX_THREADS];
 static int addr_index = 0;
 static int mac_index = 0;
-char macs[MAX_OFFERS][MAC_LEN] = { " " , " ", " ", " ", " ", " ", " ", " ", " "};
+char macs[MAX_OFFERS][MAC_LEN] = {" " , " ", " ", " ", " ", " ", " ", " ", " "};
 
 struct thread_argos {
   int sock;
@@ -47,7 +47,7 @@ void *connection_handler(void *thread_args) {  //Handle requests thread function
   struct sockaddr_in cliaddr = the_args->cli_addr;
   char *buf = the_args->the_buf; // Get buffer from args
   char ack[] = "Server saw the message \n";
-  char dhcp_offer[] = "DHCP offer!";
+  char dhcp_offer[] = " DHCP offer!";
   char new_ip_addr[] = "192.168.1.11";
   char address_offer[MAX_OFFERS][20];
   int len = strlen(new_ip_addr);  //Get length of ip_addr
@@ -59,6 +59,7 @@ void *connection_handler(void *thread_args) {  //Handle requests thread function
   strcpy(address_offer[addr_index], new_ip_addr);  // Add to address offer array
 
   char *client_mac_addr = &buf[buf_len-12]; //Get client's mac address
+  strcat(address_offer[addr_index], dhcp_offer);
 
   if(client_discover(buf)) {  //If the client requested an ip
     printf("Client discover request! \n");
@@ -81,7 +82,7 @@ void *connection_handler(void *thread_args) {  //Handle requests thread function
                 errno, strerror(errno));
         exit( -1);
     }
-    if(addr_index >= MAX_OFFERS) {
+    if(addr_index >= MAX_OFFERS) { //Check if max amount of offers
       printf("Max offers reached. \n");
       exit(-1);
     }

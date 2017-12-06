@@ -33,6 +33,14 @@ void mac_eth0(unsigned char MAC_str[13]) { //Get mac address
      close(s);
  }
 
+ int message_match(char *msg, char*key) { //Check if message matches
+   if(strncmp(key, msg, strlen(key)) == 0){
+     return 1;
+   }
+   return 0;
+ }
+
+
 int main (int argc, char *argv[])
 {
 
@@ -41,6 +49,9 @@ int main (int argc, char *argv[])
     struct sockaddr_in cliaddr;
     char  str[80];
     char rec[80];
+    char dhcp_offer[] = " DHCP offer!";
+    int rec_len;
+    char offered_ip[12];
 
     char *ipaddr;
     char *lfaddr;
@@ -87,8 +98,10 @@ int main (int argc, char *argv[])
 
     }
 
+    char *server_offer;
     cli_len = sizeof(cliaddr);
     while (1) {
+        memset((char *) &offered_ip, 0, sizeof(offered_ip)); // Clear buffers
         memset((char *) &str, 0, sizeof(str)); // Clear buffers
         memset((char *) &rec, 0, sizeof(rec));
         fgets(str, MAXLINE, stdin);   // Input message
@@ -99,7 +112,13 @@ int main (int argc, char *argv[])
             exit( -1);
         }
         n = recvfrom(fd, rec, MAXLINE, 0, (struct sockaddr *)&cliaddr, &cli_len);
-
+        rec_len = strlen(rec);
+        server_offer = &rec[rec_len-12]; //Get servers discover message
+        if(message_match(server_offer, dhcp_offer)){
+          strncpy(offered_ip, rec, 12);
+          offered_ip[12] = '\0';  //Manually set end of string for offered ip
+          printf("Server offering ip: %s\n", offered_ip);
+        }
         printf("The message from multicast DHCP server is: %s\n", rec);
 
   }
