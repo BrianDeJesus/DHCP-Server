@@ -19,3 +19,5 @@ $ gcc dhcpclient.c -o client
 ```
 $ ./client <ip_address> <port>
 ```
+
+On client side, start request for ip address from DHCP server by entering DHCP discover
