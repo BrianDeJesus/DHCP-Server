@@ -3,6 +3,7 @@ Brian DeJesus
 cs436 Networking
 DHCP Server
 tool: C
+Simulates a DHCP server
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,7 +25,7 @@ static int addr_index = 0;
 static int mac_index = 0;
 char macs[MAX_OFFERS][MAC_LEN] = {" " , " ", " ", " ", " ", " ", " ", " ", " "};
 
-struct thread_argos {
+struct thread_argos { //Struct used for multiple thread function arguments
   int sock;
   struct sockaddr_in cli_addr;
   int cli_len;
@@ -33,9 +34,8 @@ struct thread_argos {
 
 int check_macs(char *a_mac, char macz[][MAC_LEN]) {  //Check if host already been assigned ip address
   int i;
-  int lengt = strlen(a_mac);
   for(i = 0; i < MAX_OFFERS; i++) {
-    if(strncmp(a_mac, macz[i], lengt) == 0)
+    if(strncmp(a_mac, macz[i], MAC_LEN) == 0)
       return 1;
   }
   return 0;
@@ -46,10 +46,11 @@ void *connection_handler(void *thread_args) {  //Handle requests thread function
   int fd = the_args->sock;
   struct sockaddr_in cliaddr = the_args->cli_addr;
   char *buf = the_args->the_buf; // Get buffer from args
-  char ack[] = "Server saw the message \n";
+  char sees_msg[] = "Server saw the message \n";
   char reject[] = "Mac address already found! \n";
   char dhcp_offer[] = " DHCP offer!";
   char new_ip_addr[] = "192.168.1.11";
+  char ack[] = "DHCP ack";
   char address_offer[MAX_OFFERS][20];
   int len = strlen(new_ip_addr);  //Get length of ip_addr
   char int_to_char[1];   //Char holder for new unique last num for new ip
@@ -62,16 +63,17 @@ void *connection_handler(void *thread_args) {  //Handle requests thread function
   char *client_mac_addr = &buf[buf_len - 12]; //Get client's mac address
   strcat(address_offer[addr_index], dhcp_offer); // Attach offer message with ip offer
 
-  if(client_discover(buf)) {  //If the client requested an ip
-    printf("Client discover request! \n");
-    if(check_macs(client_mac_addr, macs)) {  //If host requesting another ip
+  if(client_key(buf, "DHCP discover")) {  //If the client requested an ip
+    printf("Client discovery! \n");
+    printf("MAC: %s\n", client_mac_addr);
+    if(check_macs(client_mac_addr, macs)) {  //If same host tries to restart requesting another ip
       printf("Mac address already found. Terminating now \n");
       sendto (fd, reject, strlen(reject), 0, (struct sockaddr*)&cliaddr, sizeof(cliaddr));
       exit(-1);
     }
-    else {
+    else {  //If unique mac address
       printf("Successfully added client \n");
-      strcpy(macs[mac_index], client_mac_addr);
+      strcpy(macs[mac_index], client_mac_addr); //Place client mac in used mac array
       if(mac_index > MAX_OFFERS) {
         printf("Mac address limit reached. ");
         exit(-1);
@@ -91,15 +93,19 @@ void *connection_handler(void *thread_args) {  //Handle requests thread function
     addr_index++;
     return NULL; //End of send process (already sent a message)
   }
+  if(client_key(buf, "DHCP request!")) {
+    sendto (fd, ack, strlen(ack), 0, (struct sockaddr*)&cliaddr, sizeof(cliaddr));
+    return NULL;
+  }
 
-  sendto(fd, (const void*)ack, strlen(ack), 0, (struct sockaddr *)&cliaddr, sizeof(cliaddr));
+
+  sendto(fd, (const void*)sees_msg, strlen(sees_msg), 0, (struct sockaddr *)&cliaddr, sizeof(cliaddr));
 
     return NULL;
 }
 
 
-int client_discover(char *msg) { //Check if client DHCP discover message
-  char *key = "DHCP discover";
+int client_key(char *msg, char *key) { //Check if client DHCP discover message
   if(strncmp(key, msg, strlen(key)) == 0){
     return 1;
   }
@@ -118,7 +124,7 @@ int main(int argc, char *argv[]) {
 
   char buf[80];
 
-  struct thread_argos args;
+  struct thread_argos args;  //Argument struct for thread function
   int i, rc;
 
     if (argc != 3) { // Check command line args
@@ -151,10 +157,7 @@ int main(int argc, char *argv[]) {
         close(fd);
         exit(-1);
     }
-    /* Join the multicast group  on the local host
-       interface. IP_ADD_MEMBERSHIP option must be
-       called for each local interface over which the multicast
-       datagrams are to be received. */
+    // Join the multicast group  on the local host interface.
     group.imr_multiaddr.s_addr = inet_addr(ipaddr);
     group.imr_interface.s_addr = inet_addr(ifaddr);
     if (setsockopt(fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&group, sizeof(group)) < 0)

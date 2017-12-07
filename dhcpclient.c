@@ -47,8 +47,8 @@ int main (int argc, char *argv[])
     char mac[13];
     struct in_addr localInterface;
     struct sockaddr_in cliaddr;
-    char  str[80];
-    char rec[80];
+    char  str[80];  //String to be sent
+    char rec[80];   //Buffer to receive server messages
     char dhcp_offer[] = " DHCP offer!";
     int rec_len;
     char offered_ip[12];
@@ -61,14 +61,13 @@ int main (int argc, char *argv[])
     int fd, n, cli_len;
     int reuse = 1;
 
-    if (argc != 3) {
+    if (argc != 3) { // Check command line arguments
     	fprintf(stderr, "Usage: %s <ipaddr> <port> \n", argv[0]);
     	exit(-1);
     }
 
-    mac_eth0(mac);
-    printf("MAC addres: %s \n", mac);
-    printf("MAC size: %i \n", strlen(mac));
+    mac_eth0(mac);  //Get mac address of client
+    printf("Obtained MAC addres: %s \n", mac);
     ipaddr = argv[1];
     port = atoi(argv[2]);
     lfaddr  = "127.0.0.1";
@@ -111,6 +110,9 @@ int main (int argc, char *argv[])
             fprintf(stderr, "Error sending datagram message: %x (%s) \n",
                     errno, strerror(errno));
             exit( -1);
+        }
+        if(message_match(str, "DHCP discover")) {
+          printf("Press Enter to see if server acknowledged request\n");
         }
         n = recvfrom(fd, rec, MAXLINE, 0, (struct sockaddr *)&cliaddr, &cli_len);
         rec_len = strlen(rec);
