@@ -53,6 +53,7 @@ int main (int argc, char *argv[])
     int rec_len;
     char offered_ip[12];
 
+
     char *ipaddr;
     char *lfaddr;
 
@@ -117,7 +118,9 @@ int main (int argc, char *argv[])
         if(message_match(server_offer, dhcp_offer)){
           strncpy(offered_ip, rec, 12);
           offered_ip[12] = '\0';  //Manually set end of string for offered ip
-          printf("Server offering ip: %s\n", offered_ip);
+          memset((char *) &str, 0, sizeof(str)); // Clear str buffer
+          strcpy(str, "DHCP request!");  //Send server the DHCP request for using ip that was offered
+          sendto (fd, str, MAXLINE, 0, (struct sockaddr*)&cliaddr, sizeof(cliaddr));
         }
         printf("The message from multicast DHCP server is: %s\n", rec);
 

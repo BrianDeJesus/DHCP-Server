@@ -47,6 +47,7 @@ void *connection_handler(void *thread_args) {  //Handle requests thread function
   struct sockaddr_in cliaddr = the_args->cli_addr;
   char *buf = the_args->the_buf; // Get buffer from args
   char ack[] = "Server saw the message \n";
+  char reject[] = "Mac address already found! \n";
   char dhcp_offer[] = " DHCP offer!";
   char new_ip_addr[] = "192.168.1.11";
   char address_offer[MAX_OFFERS][20];
@@ -58,19 +59,19 @@ void *connection_handler(void *thread_args) {  //Handle requests thread function
   new_ip_addr[len - 1] = int_to_char[0];  // Construct new ip
   strcpy(address_offer[addr_index], new_ip_addr);  // Add to address offer array
 
-  char *client_mac_addr = &buf[buf_len-12]; //Get client's mac address
-  strcat(address_offer[addr_index], dhcp_offer);
+  char *client_mac_addr = &buf[buf_len - 12]; //Get client's mac address
+  strcat(address_offer[addr_index], dhcp_offer); // Attach offer message with ip offer
 
   if(client_discover(buf)) {  //If the client requested an ip
     printf("Client discover request! \n");
-    if(check_macs(client_mac_addr, macs)) {  //If
+    if(check_macs(client_mac_addr, macs)) {  //If host requesting another ip
       printf("Mac address already found. Terminating now \n");
+      sendto (fd, reject, strlen(reject), 0, (struct sockaddr*)&cliaddr, sizeof(cliaddr));
       exit(-1);
     }
     else {
       printf("Successfully added client \n");
       strcpy(macs[mac_index], client_mac_addr);
-
       if(mac_index > MAX_OFFERS) {
         printf("Mac address limit reached. ");
         exit(-1);
